@@ -28,4 +28,14 @@ final class DependencyContainer: DependencyContainerProtocol {
         
         registry.removeValue(forKey: key)
     }
+    
+    func getDependency<T: DependencyContainable>() -> T {
+        guard let dependency: T = try? resolve() else {
+            let newDependency: T = .init()
+            register(newDependency)
+            return newDependency
+        }
+        
+        return dependency
+    }
 }
