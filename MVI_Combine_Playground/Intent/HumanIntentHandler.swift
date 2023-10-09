@@ -49,26 +49,30 @@ extension HumanIntentHandler: IntentHandlerProtocol {
         case .requestHumanFromFirestore:
             state.isLoading = true
             
-            repository
-                .fetch()
-                .receive(on: DispatchQueue.main)
-                .sink { [weak self] completion in
-                    guard let self else { return }
-
-                    switch completion {
-                    case .finished:
-                        state.isLoading = false
+            Task {
+                try await Task.sleep(for: .seconds(2))
+                
+                repository
+                    .fetch()
+                    .receive(on: DispatchQueue.main)
+                    .sink { [weak self] completion in
+                        guard let self else { return }
                         
-                    case .failure(let error):
-                        state.isLoading = false
-                        handle(.showErrorAlert(error))
+                        switch completion {
+                        case .finished:
+                            state.isLoading = false
+                            
+                        case .failure(let error):
+                            state.isLoading = false
+                            handle(.showErrorAlert(error))
+                        }
+                    } receiveValue: { [weak self] humans in
+                        guard let self else { return }
+                        
+                        state.humans = humans
                     }
-                } receiveValue: { [weak self] humans in
-                    guard let self else { return }
-                    
-                    state.humans = humans
-                }
-                .store(in: &cancellables)
+                    .store(in: &cancellables)
+            }
             
         case let .showErrorAlert(error):
             defer {
