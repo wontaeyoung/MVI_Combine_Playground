@@ -1,9 +1,22 @@
 import Combine
 
 final class HumanRepository: Repository {
+    enum ExceptedFetchResult {
+        case success
+        case fail
+    }
+    
     func fetch() -> AnyPublisher<[Human], Error> {
-        Future<[Int], Error> { promise in
-             promise(.success([1, 2, 3]))
+        let testResult: ExceptedFetchResult = .success
+        
+        return Future<[Int], Error> { promise in
+            switch testResult {
+            case .success:
+                promise(.success([1, 2, 3]))
+                
+            case .fail:
+                promise(.failure(RepositoryError.requestFailed))
+            }
         }
         .map { numbers in
             return numbers.map { number in
