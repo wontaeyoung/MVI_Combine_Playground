@@ -1,10 +1,12 @@
 import Combine
 import SwiftUI
+import Observation
 
-final class HumanIntentHandler: ObservableObject {
+@Observable
+final class HumanIntentHandler {
     let repository: Repository
     private var cancellables: Set<AnyCancellable> = []
-    @Published var state: State
+    var state: State
     
     init(state: State) {
         self.repository = DependencyContainer.shared.getDependency() as HumanRepository
