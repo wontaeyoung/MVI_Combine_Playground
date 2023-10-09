@@ -1,4 +1,4 @@
-struct Alert {
+struct AlertState {
     var title: String
     var description: String
     var showing: Bool
