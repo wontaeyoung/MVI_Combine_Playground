@@ -1,1 +1,3 @@
-protocol DependencyContainable { }
+protocol DependencyContainable { 
+    init()
+}
