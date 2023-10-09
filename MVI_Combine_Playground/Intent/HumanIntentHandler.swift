@@ -2,6 +2,12 @@ import Combine
 import SwiftUI
 import Observation
 
+// MARK: - 학습한 내용
+/// Dependency Container의 의존성 주입 로직 해결
+/// MVI 패턴
+/// Combine의 스레드 지정과 sink 클로저 처리 (finish, error, receivedValue)
+/// Handler.State.humans에 접근해서 업데이트 하기 -> 배열의 값 타입 객체에 접근해서 직접 프로퍼티 수정 불가 -> 기존 객체를 참고해서 만든 새 객체를 업데이트하고 기존 자리에 덮어쓰기 해야함
+
 @Observable
 final class HumanIntentHandler {
     let repository: Repository
@@ -49,30 +55,27 @@ extension HumanIntentHandler: IntentHandlerProtocol {
         case .requestHumanFromFirestore:
             state.isLoading = true
             
-            Task {
-                try await Task.sleep(for: .seconds(2))
-                
-                repository
-                    .fetch()
-                    .receive(on: DispatchQueue.main)
-                    .sink { [weak self] completion in
-                        guard let self else { return }
+            repository
+                .fetch()
+                .delay(for: .seconds(2), scheduler: DispatchQueue.global())
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] completion in
+                    guard let self else { return }
+                    
+                    switch completion {
+                    case .finished:
+                        state.isLoading = false
                         
-                        switch completion {
-                        case .finished:
-                            state.isLoading = false
-                            
-                        case .failure(let error):
-                            state.isLoading = false
-                            handle(.showErrorAlert(error))
-                        }
-                    } receiveValue: { [weak self] humans in
-                        guard let self else { return }
-                        
-                        state.humans = humans
+                    case .failure(let error):
+                        state.isLoading = false
+                        handle(.showErrorAlert(error))
                     }
-                    .store(in: &cancellables)
-            }
+                } receiveValue: { [weak self] humans in
+                    guard let self else { return }
+                    
+                    state.humans = humans
+                }
+                .store(in: &cancellables)
             
         case let .showErrorAlert(error):
             defer {
